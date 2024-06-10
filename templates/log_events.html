@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+    <style>
+        body {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .card {
+            background-color: #fff;
+            border-color: #dee2e6;
+            color: #212529;
+        }
+        
+
+        .card-header {
+            background-color: #343a40;
+            color: #fff;
+        }
+
+
+        .event-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            color: #212529;
+        }
+
+        .event-item:hover {
+            background-color: #e9ecef;
+        }
+
+        .fade-in {
+            animation: fadeIn 1s;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+{% endblock %}
+{% block title %}Log Events{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-3">
+            <div class="container fade-in sticky-top">
+                <h2 class="my-4 text-center">Логи событий</h2>
+
+                <form method="get" class="mb-4">
+                    <div class="form-group">
+                        <label for="event_type">Фильтр по типу события:</label>
+                        <select name="event_type" id="event_type" multiple class="form-control">
+                            {% for event_type in unique_event_types %}
+                                <option value="{{ event_type }}"
+                                        {% if event_type in selected_event_types %}selected{% endif %}>
+                                    {{ event_type }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="start_date">Начальная дата:</label>
+                        <input type="date" name="start_date" id="start_date" class="form-control"
+                               value="{{ start_date }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="end_date">Конечная дата:</label>
+                        <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date }}">
+                    </div>
+                    <div class="form-group">
+    <label for="start_time">Начальное время:</label>
+    <input type="time" name="start_time" id="start_time" class="form-control"
+           value="{{ start_time }}">
+</div>
+<div class="form-group">
+    <label for="end_time">Конечное время:</label>
+    <input type="time" name="end_time" id="end_time" class="form-control" value="{{ end_time }}">
+</div>
+                    <div class="form-group">
+                        <label for="sort_by">Сортировать по:</label>
+                        <select name="sort_by" id="sort_by" class="form-control">
+                            <option value="datetime" {% if sort_by == 'datetime' %}selected{% endif %}>Дата и время
+                            </option>
+                            <option value="event_type" {% if sort_by == 'event_type' %}selected{% endif %}>Тип события
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sort_order">Порядок сортировки:</label>
+                        <select name="sort_order" id="sort_order" class="form-control">
+                            <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>По возрастанию</option>
+                            <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>По убыванию</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-outline-secondary mt-3">Применить</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-9">
+
+            {% regroup log_events by datetime|date:"M d, Y" as date_list %}
+
+            {% for date in date_list %}
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary">
+                        Дата: {{ date.grouper }}
+                    </div>
+                    <div class="card-body">
+                        {% regroup date.list by datetime|date:"H:i:s" as time_list %}
+                        {% for time in time_list %}
+                            <div class="mb-4">
+                                <h5>Время: {{ time.grouper }}</h5>
+                                {% for event in time.list %}
+                                    <div class="event-item">
+                                        {% if event.event_type %}
+                                            <p><strong>Событие:</strong> {{ event.event_type }}</p>
+                                        {% endif %}
+                                        {% if event.auth_type %}
+                                            <p><strong>Тип авторизации:</strong> {{ event.auth_type }}</p>
+                                        {% endif %}
+                                        {% if event.username %}
+                                            <p><strong>Пользователь:</strong> {{ event.username }}</p>
+                                        {% endif %}
+                                        {% if event.ip_address %}
+                                            <p><strong>IP:</strong> {{ event.ip_address }}</p>
+                                        {% endif %}
+                                        {% if event.port %}
+                                            <p><strong>Порт:</strong> {{ event.port }}</p>
+                                        {% endif %}
+                                        {% if event.session_event %}
+                                            <p><strong>Событие сессии:</strong> {{ event.session_event }}</p>
+                                        {% endif %}
+                                        {% if event.session_username %}
+                                            <p><strong>Пользователь сессии:</strong> {{ event.session_username }}
+                                            </p>
+                                        {% endif %}
+                                        {% if event.session_uid %}
+                                            <p><strong>UID сессии:</strong> {{ event.session_uid }}</p>
+                                        {% endif %}
+                                        {% if event.session_by_uid %}
+                                            <p><strong>UID сессии от:</strong> {{ event.session_by_uid }}</p>
+                                        {% endif %}
+                                        {% if event.session_id %}
+                                            <p><strong>ID сессии:</strong> {{ event.session_id }}</p>
+                                        {% endif %}
+                                        {% if event.sudo_fail_message %}
+                                            <p><strong>Ошибка sudo:</strong> {{ event.sudo_fail_message }}</p>
+                                        {% endif %}
+                                        {% if event.connection_closed_username %}
+                                            <p><strong>Соединение
+                                                закрыто:</strong> {{ event.connection_closed_username }},
+                                                IP: {{ event.connection_closed_ip }},
+                                                Порт: {{ event.connection_closed_port }}</p>
+                                        {% endif %}
+                                        {% if event.received_disconnect_ip %}
+                                            <p><strong>Отключение от IP:</strong> {{ event.received_disconnect_ip }},
+                                                Порт: {{ event.received_disconnect_port }}</p>
+                                        {% endif %}
+                                        {% if event.disconnected_username %}
+                                            <p><strong>Отключен
+                                                пользователь:</strong> {{ event.disconnected_username }},
+                                                IP: {{ event.disconnected_ip }}, Порт: {{ event.disconnected_port }}
+                                            </p>
+                                        {% endif %}
+                                        {% if event.auth_failure_username %}
+                                            <p><strong>Ошибка аутентификации
+                                                пользователя:</strong> {{ event.auth_failure_username }}</p>
+                                        {% endif %}
+                                        {% if event.failed_password_username %}
+                                            <p><strong>Неправильный пароль
+                                                пользователя:</strong> {{ event.failed_password_username }},
+                                                IP: {{ event.failed_password_ip }},
+                                                Порт: {{ event.failed_password_port }}
+                                            </p>
+                                        {% endif %}
+                                        {% if event.sshd_listening_address %}
+                                            <p><strong>sshd сервер слушает
+                                                адрес:</strong> {{ event.sshd_listening_address }},
+                                                Порт: {{ event.sshd_listening_port }}</p>
+                                        {% endif %}
+                                        {% if event.new_session_logind_id %}
+                                            <p><strong>Новая сессия logind
+                                                ID:</strong> {{ event.new_session_logind_id }},
+                                                Пользователь: {{ event.new_session_logind_user }}</p>
+                                        {% endif %}
+                                        {% if event.session_logged_out_id %}
+                                            <p><strong>Сессия logind отключена
+                                                ID:</strong> {{ event.session_logged_out_id }}</p>
+                                        {% endif %}
+                                        {% if event.session_removed_id %}
+                                            <p><strong>Сессия logind удалена
+                                                ID:</strong> {{ event.session_removed_id }}</p>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

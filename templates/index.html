@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+    <style>
+        body {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .card {
+            background-color: #fff;
+            border-color: #dee2e6;
+            color: #212529;
+        }
+
+
+        .fade-in {
+            animation: fadeIn 1s;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5 fade-in">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white text-center">
+                        <h4>Загрузка лога</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="log_file">Выберите файл лога:</label>
+                                <input type="file" class="form-control-file" id="log_file" name="file" required>
+                            </div>
+                            <button type="submit" class="btn btn-outline-secondary btn-block">Загрузить</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-6">
+                <h4>Статистика событий</h4>
+                <canvas id="eventChart" style="max-height: 400px;"></canvas>
+            </div>
+            <div class="col-6">
+                <h4>Количество событий по датам</h4>
+                <canvas id="eventsByDateChart" style="min-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+    {% block extra_js %}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            let ctx = document.getElementById('eventChart').getContext('2d');
+            let eventCounts = {{ event_type_counts_json|safe }};
+            let eventLabels = eventCounts.map(function (item) {
+                return item.event_type;
+            });
+            let eventData = eventCounts.map(function (item) {
+                return item.count;
+            });
+
+            let chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: eventLabels,
+                    datasets: [{
+                        data: eventData,
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#8BC34A',
+                            '#E91E63',
+                            '#9C27B0',
+                            '#673AB7',
+                            '#3F51B5',
+                            '#2196F3',
+                            '#03A9F4',
+                            '#00BCD4',
+                            '#009688',
+                            '#4CAF50',
+                            '#CDDC39',
+                            '#FFC107',
+                            '#FF9800',
+                            '#FF5722',
+                            '#795548',
+                            '#9E9E9E',
+                            '#607D8B'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Распределение событий по типам'
+                    }
+                }
+            });
+            let eventCountsByDate = {{ event_counts_by_date_json|safe }};
+            let eventsByDateLabels = eventCountsByDate.map(function (item) {
+                return item.date;
+            });
+            let eventsByDateData = eventCountsByDate.map(function (item) {
+                return item.count;
+            });
+
+            let eventsByDateCtx = document.getElementById('eventsByDateChart').getContext('2d');
+            let eventsByDateChart = new Chart(eventsByDateCtx, {
+                type: 'line',
+                data: {
+                    labels: eventsByDateLabels,
+                    datasets: [{
+                        label: 'Количество событий',
+                        data: eventsByDateData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Дата'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Количество событий'
+                            },
+                            beginAtZero: true,
+                            stepSize: 1
+                        }
+                    }
+                }
+            });
+        </script>
+    {% endblock %}
+{% endblock %}
